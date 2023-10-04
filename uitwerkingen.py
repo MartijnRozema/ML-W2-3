@@ -6,7 +6,7 @@ from scipy.sparse import csr_matrix
 def plot_number(nrVector):
     # Let op: de manier waarop de data is opgesteld vereist dat je gebruik maakt
     # van de Fortran index-volgorde – de eerste index verandert het snelst, de 
-    # laatste index het langzaamst; als je dat niet doet, wordt het plaatje 
+    # laatste index het langzaamst; als je dat niet doet, wordt het p   laatje
     # gespiegeld en geroteerd. Zie de documentatie op 
     # https://docs.scipy.org/doc/numpy/reference/generated/numpy.reshape.html
 
@@ -42,7 +42,7 @@ def get_y_matrix(y, m):
     for i in range(len(y)):
         y_matrix[i, y[i] - 1] = 1
 
-    return csr_matrix(y_matrix)
+    return y_matrix
 
 
 # ==== OPGAVE 2c ==== 
@@ -92,19 +92,15 @@ def compute_cost(Theta1, Theta2, X, y):
     # geretourneerd.
     # Let op: de y die hier binnenkomt is de m×1-vector met waarden van 1...10. 
     # Maak gebruik van de methode get_y_matrix() die je in opgave 2a hebt gemaakt
-    # om deze om te zetten naar een matrix. 
+    # om deze om te zetten naar een matrix.
 
-    m = len(y)
+    m, n = X.shape
 
-    a1 = np.hstack((np.ones((m, 1)), X))
-    z2 = np.dot(a1, Theta1.T)
-    a2 = sigmoid(z2)
+    y_matrix = get_y_matrix(y, m)
 
-    a2 = np.hstack((np.ones((m, 1)), a2))
-    z3 = np.dot(a2, Theta2.T)
-    a3 = sigmoid(z3)
+    predictions = predict_number(Theta1, Theta2, X)
 
-    return (-1/m) * np.sum(y * np.log(a3) + (1 - y) * np.log(1 - a3))
+    return - (1 / m) * np.sum(y_matrix * np.log(predictions) + (1 - y_matrix) * np.log(1 - predictions))
 
 
 
@@ -124,7 +120,7 @@ def nn_check_gradients(Theta1, Theta2, X, y):
 
     Delta2 = np.zeros(Theta1.shape)
     Delta3 = np.zeros(Theta2.shape)
-    m = X.shape[0]
+    m, _ = X.shape
 
     for i in range(m):
         a1 = np.hstack((np.ones((1, 1)), X[i:i+1]))
@@ -137,9 +133,9 @@ def nn_check_gradients(Theta1, Theta2, X, y):
 
         delta3 = a3 - y[i:i+1]
 
-        delta2 = np.dot(delta3, Theta2) * sigmoid_gradient(np.hstack((np.ones((1, 1)), z2)))
+        delta2 = np.dot(delta3, Theta2)[:,1:] * sigmoid_gradient(z2)
 
-        Delta2 += np.dot(delta2[:, 1:].T, a1)
+        Delta2 += np.dot(delta2.T, a1)
         Delta3 += np.dot(delta3.T, a2)
 
     Delta2_grad = Delta2 / m
